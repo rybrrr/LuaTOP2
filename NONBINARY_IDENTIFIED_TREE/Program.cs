@@ -36,10 +36,29 @@ namespace NONBINARY_IDENTIFIED_TREE
             public Node<T> LeftChild { get; set; }
             public Node<T> RightChild { get; set; }
 
+            public Node<T>? Parent { get; set; }
+
             public Node(int key, T value)
             {
                 Key = key;
                 Value = value;
+            }
+
+            public void Unparent()
+            {
+                if (node.Parent == null)
+                    return;
+
+                if (node.Parent.LeftChild == node)
+                    node.Parent.LeftChild = null;
+                else if (node.Parent.RightChild == node)
+                    node.Parent.RightChild = null;
+            }
+
+            public void ClearChildren()
+            {
+                LeftChild = null;
+                RightChild = null;
             }
         }
 
@@ -65,28 +84,106 @@ namespace NONBINARY_IDENTIFIED_TREE
                 return sb.ToString();
             }
 
-            public T? Find(int key)
+            public Node<T>? Find(int key)
             {
-                // Using recursion for this kind of task is unnecessarily slow
-
-                Node<T> _find(Node<T> node)
+                Node<T>? node = Root;
+                while (node != null)
                 {
-                    if (node == null)
-                        return null;
-
                     if (node.Key == key)
                         return node;
-                
-                    if (node.Key > key)
-                        return _find(node.LeftChild);
-                    else
-                        return _find(node.RightChild);
+
+                    if (node.Key < key)
+                        node = node.Right;
+                    else if (node.Key > key)
+                        node = node.Left
+                }
+            }
+
+            public Node<T>? FindMin(Node<T>? start)
+            {
+                Node<T>? node = start == null ? Root : start;
+                while (node != null)
+                {
+                    node = node.LeftChild;
+                }
+                return node;
+            }
+
+            public Node<T>? FindMax(Node<T>? start)
+            {
+                Node<T>? node = start == null ? Root : start;
+                while (node != null)
+                {
+                    node = node.RightChild;
+                }
+                return node;
+            }
+
+            public void InsertNode(Node<T> newNode, Node<T>? start)
+            {
+                if (Root == null)
+                {
+                    Root = newNode;
+                    return;
                 }
 
-                Node<T>? leaf = _find(Root);
-                T? value = leaf?.Value;
+                Node<T>? lastNode = null;
+                Node<T>? node = start == null ? Root : start;
+                while (node != null)
+                {
+                    lastNode = node;
+                    if (node.Key == newNode.Key)
+                        return;    // Key already exists in the tree => no need to change anything
 
-                return value;
+                    if (node.Key < newNode.Key)
+                        node = node.Right;
+                    else if (node.Key > newNode.Key)
+                        node = node.Left;
+                }
+
+                newNode.Parent = lastNode;
+                if (lastNode.Key < newNode.Key)
+                    lastNode.Right = newNode;
+                else
+                    lastNode.Left = newNode;
+            }
+
+            public void Insert(int newKey, T newValue)
+            {
+                Node<T> newNode = new Node<T>(newKey, newValue);
+                InsertNode(newNode);
+            }
+
+            public void RemoveNode(Node<T> node)
+            {
+		Node<T>? substituent = null;
+                substituent = substituent == null ? FindMax(node.LeftChild) : substituent;
+                substituent = substituent == null ? FindMin(node.RightChild) : substituent;
+
+                Node<T>? parent = node.Parent;
+                Node<T>? rightChild = node.RightChild;
+
+                node.Unparent();
+                node.ClearChildren();
+
+                if (substituent == null)
+                    return;
+                
+                substituent.Unparent();
+                InsertNode(substituent, parent);
+
+                if (parent == null && rightChild != null)
+                    InsertNode(rightChild, substituent);
+
+            }
+
+            public T? Remove(int key)
+            {
+                Node<T>? node = Find(key);
+                if (node == null)
+                    return null;
+
+                
             }
         }
     }
